@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galactic Quest Login</title>
+    <style>
+        /* Global Styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #fff;
+            overflow-x: hidden;
+            animation: fadeIn 1s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Starry Background Animation */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 50%, rgba(255, 165, 0, 0.3) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 20%, rgba(255, 255, 0, 0.2) 0%, transparent 50%),
+                        radial-gradient(circle at 40% 80%, rgba(138, 43, 226, 0.3) 0%, transparent 50%);
+            animation: twinkle 4s infinite alternate;
+            z-index: -1;
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* Container */
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(255, 165, 0, 0.5);
+            animation: slideIn 1s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        h1 {
+            text-align: center;
+            color: #ffa500;
+            text-shadow: 0 0 10px #ffa500;
+            animation: glow 2s infinite alternate;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 0 10px #ffa500; }
+            to { text-shadow: 0 0 20px #ffa500, 0 0 30px #ffa500; }
+        }
+
+        /* Form Styles */
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        label {
+            font-weight: bold;
+            color: #87ceeb;
+        }
+
+        input {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            transition: background 0.3s;
+        }
+
+        input:focus {
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+            box-shadow: 0 0 10px #87ceeb;
+        }
+
+        button {
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            background: linear-gradient(45deg, #ff4500, #ffa500);
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 69, 0, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 69, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 69, 0, 0); }
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px #ff4500;
+        }
+
+        /* Game Canvas */
+        canvas {
+            display: block;
+            margin: 20px auto;
+            border: 2px solid #ffa500;
+            border-radius: 10px;
+            background: #000;
+            box-shadow: 0 0 20px rgba(255, 165, 0, 0.5);
+        }
+
+        /* Game Play Area */
+        .game-area {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .score {
+            font-size: 24px;
+            color: #00ff00;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+
+        /* Messages */
+        .message {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            animation: fadeIn 0.5s;
+        }
+
+        .success { background: rgba(0, 255, 0, 0.2); color: #00ff00; }
+        .error { background: rgba(255, 0, 0, 0.2); color: #ff0000; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Galactic Quest Login</h1>
+        <form id="loginForm">
+            <label for="username">Username/Email:</label>
+            <input type="text" id="username" required>
+            
+            <label for="password">Password:</label>
+            <input type="password" id="password" required>
+            
+            <button type="submit">Login & Verify</button>
+        </form>
+        
+        <div class="game-area">
+            <h2>Asteroid Dodger Game</h2>
+            <p>Total Score: <span id="totalScore" class="score">0</span></p>
+            <canvas id="gameCanvas" width="600" height="400"></canvas>
+            <button id="startGameBtn">Start Game</button>
+            <button id="playBtn">Quick Click Score</button>
+            <br><br>
+            <button id="saveBtn">Save Info</button>
+            <button id="loadBtn">Load Info</button>
+        </div>
+        
+        <div id="message"></div>
+    </div>
+
+    <script>
+        // Login Verification (Client-Side)
+        const loginForm = document.getElementById('loginForm');
+        const messageDiv = document.getElementById('message');
+        
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (username && password.length >= 6) {
+                messageDiv.innerHTML = '<div class="message success">Login Verified! Welcome to Galactic Quest.</div>';
+            } else {
+                messageDiv.innerHTML = '<div class="message error">Invalid credentials. Password must be at least 6 characters.</div>';
+            }
+        });
+        
+        // Game Variables
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let gameRunning = false;
+        let gameScore = 0;
+        let totalScore = 0;
+        const totalScoreSpan = document.getElementById('totalScore');
+        const startGameBtn = document.getElementById('startGameBtn');
+        
+        // Spaceship
+        let ship = { x: canvas.width / 2, y: canvas.height - 50, size: 20 };
+        
+        // Asteroids
+        let asteroids = [];
+        let asteroidSpeed = 2;
+        
+        // Game Loop
+        function gameLoop() {
+            if (!gameRunning) return;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw Spaceship (glowing triangle)
+            ctx.fillStyle = '#ffa500';
+            ctx.shadowColor = '#ffa500';
+            ctx.shadowBlur = 10;
+            ctx.beginPath();
+            ctx.moveTo(ship.x, ship.y - ship.size);
+            ctx.lineTo(ship.x - ship.size, ship.y + ship.size);
+            ctx.lineTo(ship.x + ship.size, ship.y + ship.size);
+            ctx.closePath();
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            
+            // Update and Draw Asteroids
+            asteroids.forEach((asteroid, index) => {
+                asteroid.y += asteroidSpeed;
+                ctx.fillStyle = '#8a2be2';
+                ctx.shadowColor = '#8a2be2';
+                ctx.shadowBlur = 5;
+                ctx.beginPath();
+                ctx.arc(asteroid.x, asteroid.y, asteroid.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                
+                // Collision Detection
+                if (Math.sqrt((asteroid.x - ship.x)**2 + (asteroid.y - ship.y)**2) < asteroid.size + ship.size) {
+                    gameRunning = false;
+                    messageDiv.innerHTML = '<div class="message error">Game Over! Asteroid hit. Score: ' + gameScore + '</div>';
+                    totalScore += gameScore;
+                    totalScoreSpan.textContent = totalScore;
+                    gameScore = 0;
+                    asteroids = [];
+                }
+                
+                // Remove off-screen asteroids
+                if (asteroid.y > canvas.height) {
+                    asteroids.splice(index, 1);
+                    gameScore++;
+                }
+            });
+            
+            // Spawn Asteroids
+            if (Math.random() < 0.02) {
+                asteroids.push({ x: Math.random() * canvas.width, y: 0, size: 15 + Math.random() * 10 });
+            }
+            
+            // Increase Difficulty
+            asteroidSpeed += 0.001;
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Mouse Movement for Ship
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            ship.x = e.clientX - rect.left;
+        });
+        
+        // Start Game
+        startGameBtn.addEventListener('click', () => {
+            if (!gameRunning) {
+                gameRunning = true;
+                asteroids = [];
+                asteroidSpeed = 2;
+                gameLoop();
+                messageDiv.innerHTML = '<div class="message success">Game Started! Dodge the asteroids!</div>';
+            }
+        });
+        
+        // Quick Click Score (from original)
+        const playBtn = document.getElementById('playBtn');
+        playBtn.addEventListener('click', () => {
+            totalScore++;
+            totalScoreSpan.textContent = totalScore;
+            totalScoreSpan.style.animation = 'none';
+            setTimeout(() => totalScoreSpan.style.animation = 'bounce 1s infinite', 10);
+        });
+        
+        // Info Save/Load using localStorage
+        const saveBtn = document.getElementById('saveBtn');
+        const loadBtn = document.getElementById('loadBtn');
+        
+        saveBtn.addEventListener('click', () => {
+            const username = document.getElementById('username').value;
+            if (username) {
+                localStorage.setItem('gameUsername', username);
+                localStorage.setItem('gameTotalScore', totalScore);
+                messageDiv.innerHTML = '<div class="message success">Info Saved! Username and total score stored.</div>';
+            } else {
+                messageDiv.innerHTML = '<div class="message error">Enter a username first!</div>';
+            }
+        });
+        
+        loadBtn.addEventListener('click', () => {
+            const savedUsername = localStorage.getItem('gameUsername');
+            const savedScore = localStorage.getItem('gameTotalScore');
+            if (savedUsername && savedScore) {
+                document.getElementById('username').value = savedUsername;
+                totalScore = parseInt(savedScore);
+                totalScoreSpan.textContent = totalScore;
+                messageDiv.innerHTML = '<div class="message success">Info Loaded! Welcome back, ' + savedUsername + '.</div>';
+            } else {
+                messageDiv.innerHTML = '<div class="message error">No saved info found.</div>';
+            }
+        });
+    </script>
+</body>
+</html>

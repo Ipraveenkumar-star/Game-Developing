@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galactic Brawl</title>
+    <style>
+        /* Global Styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #fff;
+            overflow-x: hidden;
+            animation: fadeIn 1s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Cosmic Background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 50%, rgba(255, 165, 0, 0.3) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 20%, rgba(255, 255, 0, 0.2) 0%, transparent 50%),
+                        radial-gradient(circle at 40% 80%, rgba(138, 43, 226, 0.3) 0%, transparent 50%);
+            animation: twinkle 4s infinite alternate;
+            z-index: -1;
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* Container */
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(255, 165, 0, 0.5);
+            animation: slideIn 1s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        h1 {
+            text-align: center;
+            color: #ffa500;
+            text-shadow: 0 0 10px #ffa500;
+            animation: glow 2s infinite alternate;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 0 10px #ffa500; }
+            to { text-shadow: 0 0 20px #ffa500, 0 0 30px #ffa500; }
+        }
+
+        /* Form Styles */
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-weight: bold;
+            color: #87ceeb;
+        }
+
+        input {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            transition: background 0.3s;
+        }
+
+        input:focus {
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+            box-shadow: 0 0 10px #87ceeb;
+        }
+
+        button {
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            background: linear-gradient(45deg, #ff4500, #ffa500);
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 69, 0, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 69, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 69, 0, 0); }
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px #ff4500;
+        }
+
+        /* Game Canvas */
+        canvas {
+            display: block;
+            margin: 20px auto;
+            border: 2px solid #ffa500;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            box-shadow: 0 0 20px rgba(255, 165, 0, 0.5);
+        }
+
+        /* Health Bars */
+        .health-bar {
+            width: 200px;
+            height: 20px;
+            background: #333;
+            border-radius: 10px;
+            margin: 10px;
+            overflow: hidden;
+        }
+
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff00, #ffff00, #ff0000);
+            transition: width 0.3s ease;
+        }
+
+        /* Controls Display */
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+            color: #87ceeb;
+        }
+
+        /* Messages */
+        .message {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            animation: fadeIn 0.5s;
+        }
+
+        .success { background: rgba(0, 255, 0, 0.2); color: #00ff00; }
+        .error { background: rgba(255, 0, 0, 0.2); color: #ff0000; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Galactic Brawl</h1>
+        <form id="loginForm">
+            <label for="username">Username/Email:</label>
+            <input type="text" id="username" required>
+            
+            <label for="password">Password:</label>
+            <input type="password" id="password" required>
+            
+            <button type="submit">Login & Verify</button>
+        </form>
+        
+        <div id="gameSection" style="display: none;">
+            <div style="display: flex; justify-content: space-around;">
+                <div>
+                    <h3>Player 1</h3>
+                    <div class="health-bar"><div id="p1Health" class="health-fill" style="width: 100%;"></div></div>
+                </div>
+                <div>
+                    <h3>Player 2</h3>
+                    <div class="health-bar"><div id="p2Health" class="health-fill" style="width: 100%;"></div></div>
+                </div>
+            </div>
+            
+            <canvas id="gameCanvas" width="800" height="400"></canvas>
+            
+            <div class="controls">
+                <p><strong>Player 1:</strong> A/D (Move), W (Jump), S (Punch)</p>
+                <p><strong>Player 2:</strong> Arrow Keys (Move), Up (Jump), Down (Punch)</p>
+                <p>Wins: Player 1 - <span id="p1Wins">0</span> | Player 2 - <span id="p2Wins">0</span></p>
+            </div>
+            
+            <button id="startGameBtn">Start 2-Player Game</button>
+            <button id="startAIBtn">Start vs AI</button>
+            <button id="restartBtn">Restart</button>
+            <br><br>
+            <button id="saveBtn">Save Progress</button>
+            <button id="loadBtn">Load Progress</button>
+        </div>
+        
+        <div id="message"></div>
+    </div>
+
+    <script>
+        // Login Verification
+        const loginForm = document.getElementById('loginForm');
+        const gameSection = document.getElementById('gameSection');
+        const messageDiv = document.getElementById('message');
+        
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (username && password.length >= 6) {
+                messageDiv.innerHTML = '<div class="message success">Login Verified! Access granted to Galactic Brawl.</div>';
+                gameSection.style.display = 'block';
+                startGameLoop(); // Start the continuous game loop after login
+            } else {
+                messageDiv.innerHTML = '<div class="message error">Invalid credentials. Password must be at least 6 characters.</div>';
+            }
+        });
+        
+        // Game Variables
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let gameRunning = false;
+        let p1Wins = 0, p2Wins = 0;
+        const p1WinsSpan = document.getElementById('p1Wins');
+        const p2WinsSpan = document.getElementById('p2Wins');
+        
+        // Players
+        let player1 = { x: 100, y: 300, width: 40, height: 60, health: 100, punching: false, jumping: false, vy: 0 };
+        let player2 = { x: 660, y: 300, width: 40, height: 60, health: 100, punching: false, jumping: false, vy: 0 };
+        let aiMode = false;
+        
+        // Controls
+        let keys = {};
+        document.addEventListener('keydown', (e) => keys[e.key] = true);
+        document.addEventListener('keyup', (e) => keys[e.key] = false);
+        
+        // Continuous Game Loop (runs always, but only updates logic when gameRunning)
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Always draw background
+            drawBackground();
+            
+            // Always draw players in their current state
+            drawPlayer(player1, '#ff4500');
+            drawPlayer(player2, '#00ff00');
+            
+            if (gameRunning) {
+                // Update logic only when game is active
+                updatePlayer(player1, 'a', 'd', 'w', 's');
+                updatePlayer(player2, 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown');
+                
+                // Check Collisions and Punching
+                if (player1.punching && Math.abs(player1.x - player2.x) < 50) {
+                    player2.health -= 10;
+                    player2.x += 20; // Knockback
+                    createParticles(player2.x, player2.y);
+                }
+                if (player2.punching && Math.abs(player2.x - player1.x) < 50) {
+                    player1.health -= 10;
+                    player1.x -= 20; // Knockback
+                    createParticles(player1.x, player1.y);
+                }
+                
+                // Update Health Bars
+                document.getElementById('p1Health').style.width = player1.health + '%';
+                document.getElementById('p2Health').style.width = player2.health + '%';
+                
+                // Check Win Condition
+                if (player1.health <= 0) {
+                    p2Wins++;
+                    p2WinsSpan.textContent = p2Wins;
+                    endGame('Player 2 Wins!');
+                } else if (player2.health <= 0) {
+                    p1Wins++;
+                    p1WinsSpan.textContent = p1Wins;
+                    endGame('Player 1 Wins!');
+                }
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function startGameLoop() {
+            gameLoop(); // Kick off the loop
+        }
+        
+        function drawBackground() {
+            ctx.fillStyle = '#ffff00';
+            ctx.beginPath();
+            ctx.arc(200, 100, 30, 0, Math.PI * 2);
+            ctx.fill(); // Star
+            ctx.fillStyle = '#8a2be2';
+            ctx.beginPath();
+            ctx.arc(600, 150, 50, 0, Math.PI * 2);
+            ctx.fill(); // Planet
+        }
+        
+        function updatePlayer(player, leftKey, rightKey, jumpKey, punchKey) {
+            if (keys[leftKey] && player.x > 0) player.x -= 5;
+            if (keys[rightKey] && player.x < canvas.width - player.width) player.x += 5;
+            if (keys[jumpKey] && !player.jumping) {
+                player.jumping = true;
+                player.vy = -10;
+            }
+            if (keys[punchKey]) player.punching = true;
+            else player.punching = false;
+            
+            // Gravity and Jumping
+            player.y += player.vy;
+            player.vy += 0.5;
+            if (player.y >= 300) {
+                player.y = 300;
+                player.jumping = false;
+                player.vy = 0;
+            }
+            
+            // AI for Single Player
+            if (aiMode && player === player2) {
+                if (Math.random() < 0.01) player.punching = true;
+                else player.punching = false;
+                if (player.x < player1.x) player.x += 2;
+                else player.x -= 2;
+            }
+        }
+        
+        function drawPlayer(player, color) {
+            ctx.fillStyle = color;
+            ctx.shadowColor = color;
+            ctx.shadowBlur = player.punching ? 20 : 0;
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+            if (player.punching) {
+                ctx.fillRect(player.x + (player === player1 ? player.width : -20), player.y + 10, 20, 10); // Punch fist
+            }
+            ctx.shadowBlur = 0;
+        }
+        
+        function createParticles(x, y) {
+            for (let i = 0; i < 10; i++) {
+                setTimeout(() => {
+                    ctx.fillStyle = '#ffff00';
+                    ctx.beginPath();
+                    ctx.arc(x + Math.random() * 20 - 10, y + Math.random() * 20 - 10, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }, i * 50);
+            }
+        }
+        
+        function endGame(message) {
+            gameRunning = false;
+            messageDiv.innerHTML = '<div class="message success">' + message + '</div>';
+        }
+        
+        // Buttons
+        document.getElementById('startGameBtn').addEventListener('click', () => {
+            resetGame();
+            aiMode = false;
+            gameRunning = true;
+        });
+        
+        document.getElementById('startAIBtn').addEventListener('click', () => {
+            resetGame();
+            aiMode = true;
+            gameRunning = true;
+        });
+        
+        document.getElementById('restartBtn').addEventListener('click', () => {
+            resetGame();
+            gameRunning = true;
+        });
+        
+        function resetGame() {
+            player1 = { x: 100, y: 300, width: 40, height: 60, health: 100, punching: false, jumping: false, vy: 0 };
+            player2 = { x: 660, y: 300, width: 40, height: 60, health: 100, punching: false, jumping: false, vy: 0 };
+            document.getElementById('p1Health').style.width = '100%';
+            document.getElementById('p2Health').style.width = '100%';
+        }
+        
+        // Save/Load
+        document.getElementById('saveBtn').addEventListener('click', () => {
+            localStorage.setItem('brawlUsername', document.getElementById('username').value);
+            localStorage.setItem('p1Wins', p1Wins);
+            localStorage.setItem('p2Wins', p2Wins);
+            messageDiv.innerHTML = '<div class="message success">Progress Saved!</div>';
+        });
+        
+        document.getElementById('loadBtn').addEventListener('click', () => {
+            const username = localStorage.getItem('brawlUsername');
+            const savedP1 = localStorage.getItem('p1Wins');
+            const savedP2 = localStorage.getItem('p2Wins');
+            if (username) {
+                document.getElementById('username').value = username;
+                p1Wins = parseInt(savedP1) || 0;
+                p2Wins = parseInt(savedP2) || 0;
+                p1WinsSpan.textContent = p1Wins;
+                p2WinsSpan.textContent = p2Wins;
+                messageDiv.innerHTML = '<div class="message success">Progress Loaded!</div>';
+            } else {
+                messageDiv.innerHTML = '<div class="message error">No saved progress.</div>';
+            }
+        });
+    </script>
+</body>
+</html>

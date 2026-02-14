@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>VOID CHESS | 100 Tactical Puzzles</title>
+    <style>
+        :root {
+            --bg: #050508;
+            --cell: #1a1a2e;
+            --neon: #00f2ff;
+            --virus: #ff0055;
+            --accent: #7000ff;
+        }
+
+        body {
+            background: var(--bg);
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        /* UI Styling */
+        .header { text-align: center; margin-bottom: 15px; z-index: 10; }
+        .header h1 { 
+            font-size: 2.5rem; 
+            margin: 0; 
+            letter-spacing: 8px; 
+            color: var(--neon); 
+            text-shadow: 0 0 15px var(--neon); 
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* The Board */
+        #board {
+            display: grid;
+            grid-template-columns: repeat(8, 55px);
+            grid-template-rows: repeat(8, 55px);
+            gap: 3px;
+            padding: 10px;
+            background: rgba(112, 0, 255, 0.2);
+            border: 2px solid var(--accent);
+            border-radius: 8px;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+        }
+
+        .cell {
+            width: 55px;
+            height: 55px;
+            background: var(--cell);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 32px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .cell:hover { background: var(--accent); transform: scale(1.05); }
+        .cell.dark { background: #0d0d1a; }
+
+        .piece { 
+            user-select: none; 
+            filter: drop-shadow(0 0 5px var(--neon)); 
+        }
+        .virus { 
+            color: var(--virus); 
+            filter: drop-shadow(0 0 10px var(--virus)); 
+        }
+
+        /* Controls */
+        .controls { margin-top: 25px; text-align: center; width: 450px; }
+        #status { 
+            height: 30px;
+            margin-bottom: 15px;
+            font-weight: bold; 
+            color: var(--neon);
+            text-shadow: 0 0 5px black;
+        }
+
+        .btn-group { display: flex; gap: 10px; justify-content: center; }
+        .btn {
+            background: transparent;
+            border: 2px solid var(--neon);
+            color: var(--neon);
+            padding: 10px 20px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: 0.3s;
+        }
+
+        .btn:hover {
+            background: var(--neon);
+            color: black;
+            box-shadow: 0 0 20px var(--neon);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>VOID CHESS</h1>
+    </div>
+
+    <div class="stats-bar">
+        <div>SECTOR: <span id="level-display">1</span> / 100</div>
+        <div>STREAK: <span id="streak">0</span></div>
+    </div>
+
+    <div id="board"></div>
+
+    <div class="controls">
+        <div id="status">INITIATING TACTICAL INTERFACE...</div>
+        <div class="btn-group">
+            <button class="btn" onclick="resetLevel()">REBOOT SECTOR</button>
+            <button class="btn" onclick="skipLevel()">SKIP (EXPERIMENTAL)</button>
+        </div>
+    </div>
+
+    <script>
+        const boardElement = document.getElementById('board');
+        const statusText = document.getElementById('status');
+        const levelText = document.getElementById('level-display');
+        const streakText = document.getElementById('streak');
+        
+        let currentLevel = parseInt(localStorage.getItem('chess_level')) || 1;
+        let streak = 0;
+
+        // Puzzle Logic: Procedural Generation for 100 levels
+        function getLevelData(lvl) {
+            // This math ensures every level (1 to 100) is different but solvable
+            const x1 = (lvl * 3) % 8;
+            const y1 = (lvl * 7) % 8;
+            
+            // Standard Knight Moves for the Virus King position
+            const moves = [[1,2], [1,-2], [-1,2], [-1,-2], [2,1], [2,-1], [-2,1], [-2,-1]];
+            const move = moves[lvl % moves.length];
+            
+            let x2 = x1 + move[0];
+            let y2 = y1 + move[1];
+
+            // Keep virus inside the 8x8 grid
+            if (x2 < 0 || x2 > 7) x2 = x1 - move[0];
+            if (y2 < 0 || y2 > 7) y2 = y1 - move[1];
+
+            return { pilot: { x: x1, y: y1 }, virus: { x: x2, y: y2 } };
+        }
+
+        function createBoard() {
+            boardElement.innerHTML = '';
+            const data = getLevelData(currentLevel);
+            levelText.innerText = currentLevel;
+            streakText.innerText = streak;
+
+            for (let y = 0; y < 8; y++) {
+                for (let x = 0; x < 8; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = `cell ${(x + y) % 2 === 0 ? '' : 'dark'}`;
+                    
+                    if (x === data.pilot.x && y === data.pilot.y) {
+                        cell.innerHTML = '<span class="piece">♞</span>';
+                    } else if (x === data.virus.x && y === data.virus.y) {
+                        cell.innerHTML = '<span class="piece virus">♚</span>';
+                    }
+
+                    cell.onclick = () => handleMove(x, y);
+                    boardElement.appendChild(cell);
+                }
+            }
+            statusText.style.color = "#00f2ff";
+            statusText.innerText = "MISSION: CAPTURE THE VIRUS KING";
+        }
+
+        function handleMove(x, y) {
+            const data = getLevelData(currentLevel);
+            const dx = Math.abs(x - data.pilot.x);
+            const dy = Math.abs(y - data.pilot.y);
+            
+            // Knight movement logic: L-shape
+            const isKnightMove = (dx === 1 && dy === 2) || (dx === 2 && dy === 1);
+            
+            if (isKnightMove) {
+                if (x === data.virus.x && y === data.virus.y) {
+                    win();
+                } else {
+                    statusText.innerText = "TACTICAL ERROR: TARGET MISSED";
+                    statusText.style.color = "#ff0055";
+                    streak = 0;
+                    streakText.innerText = streak;
+                }
+            } else {
+                statusText.innerText = "INVALID VECTOR: USE L-SHAPE MOVE";
+                statusText.style.color = "#ffa500";
+            }
+        }
+
+        function win() {
+            statusText.innerText = "TARGET NEUTRALIZED! SYNCING DATA...";
+            statusText.style.color = "#00f2ff";
+            currentLevel++;
+            streak++;
+            
+            // Save Progress
+            localStorage.setItem('chess_level', currentLevel);
+
+            setTimeout(() => {
+                if (currentLevel > 100) {
+                    alert("CONGRATULATIONS PILOT! You have cleared all 100 sectors.");
+                    currentLevel = 1;
+                    localStorage.setItem('chess_level', 1);
+                }
+                createBoard();
+            }, 800);
+        }
+
+        function resetLevel() {
+            statusText.innerText = "SYSTEM REBOOTING...";
+            setTimeout(createBoard, 300);
+        }
+
+        function skipLevel() {
+            currentLevel++;
+            createBoard();
+        }
+
+        // Initialize
+        window.onload = createBoard;
+    </script>
+</body>
+</html>

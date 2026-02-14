@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Dash | Play & Save</title>
+    <style>
+        :root {
+            --neon-blue: #00f2ff;
+            --neon-pink: #ff00c8;
+            --bg: #0a0a12;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: white;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Login & Info Section */
+        #ui-layer {
+            position: absolute;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 30px;
+            border: 2px solid var(--neon-blue);
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 0 20px var(--neon-blue);
+        }
+
+        input {
+            background: transparent;
+            border: 1px solid var(--neon-pink);
+            color: white;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        .btn {
+            background: var(--neon-blue);
+            color: black;
+            border: none;
+            padding: 10px 20px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: 0.3s;
+        }
+
+        .btn:hover {
+            box-shadow: 0 0 15px var(--neon-blue);
+            transform: scale(1.1);
+        }
+
+        /* Game Canvas */
+        canvas {
+            border-bottom: 4px solid var(--neon-pink);
+            background: #111;
+            display: none;
+        }
+
+        #stats {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 20px;
+            color: var(--neon-blue);
+            display: none;
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div id="stats">
+        Pilot: <span id="pilot-name">---</span> | 
+        High Score: <span id="high-score">0</span>
+    </div>
+
+    <div id="ui-layer">
+        <h1 style="color: var(--neon-pink)">NEON DASH</h1>
+        <p>Save your pilot data to start the engine</p>
+        <input type="text" id="username" placeholder="Enter Pilot Name" required><br>
+        <button class="btn" onclick="startGame()">INITIALIZE GAME</button>
+        <p style="font-size: 10px; color: #666;">Data will be saved to local memory.</p>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const ui = document.getElementById("ui-layer");
+        const stats = document.getElementById("stats");
+
+        let score = 0;
+        let gameActive = false;
+        let player = { x: 50, y: 150, w: 30, h: 30, dy: 0, jump: -12, gravity: 0.8 };
+        let obstacles = [];
+        let frame = 0;
+
+        function startGame() {
+            const name = document.getElementById("username").value;
+            if (!name) return alert("Enter a name first!");
+
+            // Save Info Logic
+            localStorage.setItem("neon_pilot", name);
+            document.getElementById("pilot-name").innerText = name;
+            document.getElementById("high-score").innerText = localStorage.getItem("neon_high") || 0;
+
+            // UI Transition
+            ui.classList.add("hidden");
+            stats.style.display = "block";
+            canvas.style.display = "block";
+            canvas.width = window.innerWidth * 0.8;
+            canvas.height = 300;
+
+            gameActive = true;
+            loop();
+        }
+
+        // Controls
+        window.addEventListener("keydown", (e) => {
+            if (e.code === "Space" && player.y === canvas.height - player.h) {
+                player.dy = player.jump;
+            }
+        });
+
+        function spawnObstacle() {
+            if (frame % 80 === 0) {
+                obstacles.push({ x: canvas.width, w: 20, h: 30 + Math.random() * 40 });
+            }
+        }
+
+        function loop() {
+            if (!gameActive) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Player Physics
+            player.dy += player.gravity;
+            player.y += player.dy;
+
+            if (player.y > canvas.height - player.h) {
+                player.y = canvas.height - player.h;
+                player.dy = 0;
+            }
+
+            // Draw Player
+            ctx.fillStyle = "#ff00c8";
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = "#ff00c8";
+            ctx.fillRect(player.x, player.y, player.w, player.h);
+
+            // Obstacles
+            obstacles.forEach((obs, index) => {
+                obs.x -= 6;
+                ctx.fillStyle = "#00f2ff";
+                ctx.shadowColor = "#00f2ff";
+                ctx.fillRect(obs.x, canvas.height - obs.h, obs.w, obs.h);
+
+                // Collision Detection
+                if (
+                    player.x < obs.x + obs.w &&
+                    player.x + player.w > obs.x &&
+                    player.y + player.h > canvas.height - obs.h
+                ) {
+                    gameOver();
+                }
+
+                if (obs.x < -20) {
+                    obstacles.splice(index, 1);
+                    score++;
+                }
+            });
+
+            frame++;
+            spawnObstacle();
+            requestAnimationFrame(loop);
+        }
+
+        function gameOver() {
+            gameActive = false;
+            const high = localStorage.getItem("neon_high") || 0;
+            if (score > high) {
+                localStorage.setItem("neon_high", score);
+                alert("NEW HIGH SCORE: " + score);
+            } else {
+                alert("CRASHED! Score: " + score);
+            }
+            location.reload(); // Quick reset
+        }
+    </script>
+</body>
+</html>
