@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Neon Gun Fighter - 2 Player</title>
+    <style>
+        :root { --p1-color: #ff0055; --p2-color: #00d2ff; }
+        body {
+            margin: 0; background: #050505; color: white;
+            font-family: 'Arial', sans-serif; overflow: hidden;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        #stats {
+            display: flex; gap: 60px; margin: 20px; font-size: 28px;
+            font-weight: bold; letter-spacing: 2px;
+        }
+        canvas {
+            background: #000; border: 3px solid #333;
+            border-radius: 15px; box-shadow: 0 0 40px rgba(0,0,0,0.8);
+        }
+        .controls { color: #666; margin-top: 10px; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <div id="stats">
+        <div style="color: var(--p1-color)">RED: <span id="s1">0</span></div>
+        <div style="color: #f1c40f">NEON BATTLE</div>
+        <div style="color: var(--p2-color)">BLUE: <span id="s2">0</span></div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+    
+    <div class="controls">
+        P1: [W/S] Move, [D] SHOOT | P2: [UP/DOWN] Move, [LEFT ARROW] SHOOT
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 900; canvas.height = 500;
+
+        let s1 = 0, s2 = 0;
+        const p1 = { x: 80, y: 250, color: '#ff0055', lastShot: 0 };
+        const p2 = { x: 820, y: 250, color: '#00d2ff', lastShot: 0 };
+        let bullets = [];
+        let sparks = [];
+
+        const keys = {};
+        window.onkeydown = (e) => keys[e.code] = true;
+        window.onkeyup = (e) => keys[e.code] = false;
+
+        function drawStickman(x, y, color, side) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 4;
+            ctx.shadowBlur = 10; ctx.shadowColor = color;
+            
+            // Head
+            ctx.beginPath(); ctx.arc(x, y, 12, 0, Math.PI*2); ctx.stroke();
+            // Body
+            ctx.beginPath(); ctx.moveTo(x, y+12); ctx.lineTo(x, y+50); ctx.stroke();
+            // Legs
+            ctx.beginPath(); ctx.moveTo(x, y+50); ctx.lineTo(x-15, y+80);
+            ctx.moveTo(x, y+50); ctx.lineTo(x+15, y+80); ctx.stroke();
+            
+            // GUN & ARM
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            if(side === 'right') {
+                ctx.moveTo(x, y+25); ctx.lineTo(x+25, y+25); // Arm
+                ctx.lineTo(x+25, y+30); // Gun handle
+                ctx.moveTo(x+25, y+22); ctx.lineTo(x+45, y+22); // Gun Barrel
+            } else {
+                ctx.moveTo(x, y+25); ctx.lineTo(x-25, y+25); // Arm
+                ctx.lineTo(x-25, y+30); // Gun handle
+                ctx.moveTo(x-25, y+22); ctx.lineTo(x-45, y+22); // Gun Barrel
+            }
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+        }
+
+        function createSparks(x, y, color) {
+            for(let i=0; i<8; i++) {
+                sparks.push({x, y, vx:(Math.random()-0.5)*10, vy:(Math.random()-0.5)*10, life:1, color});
+            }
+        }
+
+        function update() {
+            // Movement
+            if(keys['KeyW'] && p1.y > 40) p1.y -= 6;
+            if(keys['KeyS'] && p1.y < 400) p1.y += 6;
+            if(keys['ArrowUp'] && p2.y > 40) p2.y -= 6;
+            if(keys['ArrowDown'] && p2.y < 400) p2.y += 6;
+
+            // Shooting Logic (Cooldown to prevent lag)
+            let now = Date.now();
+            if(keys['KeyD'] && now - p1.lastShot > 300) {
+                bullets.push({x: p1.x+45, y: p1.y+22, vx: 12, color: p1.color, owner: 'p1'});
+                p1.lastShot = now;
+            }
+            if(keys['ArrowLeft'] && now - p2.lastShot > 300) {
+                bullets.push({x: p2.x-45, y: p2.y+22, vx: -12, color: p2.color, owner: 'p2'});
+                p2.lastShot = now;
+            }
+
+            // Bullet Update
+            bullets.forEach((b, i) => {
+                b.x += b.vx;
+                // Collision with P2
+                if(b.owner === 'p1' && b.x > p2.x-15 && b.x < p2.x+15 && b.y > p2.y && b.y < p2.y+80) {
+                    s1++; document.getElementById('s1').innerText = s1;
+                    createSparks(b.x, b.y, b.color);
+                    bullets.splice(i, 1);
+                }
+                // Collision with P1
+                if(b.owner === 'p2' && b.x < p1.x+15 && b.x > p1.x-15 && b.y > p1.y && b.y < p1.y+80) {
+                    s2++; document.getElementById('s2').innerText = s2;
+                    createSparks(b.x, b.y, b.color);
+                    bullets.splice(i, 1);
+                }
+                if(b.x < 0 || b.x > canvas.width) bullets.splice(i, 1);
+            });
+
+            // Spark Update
+            sparks.forEach((p, i) => {
+                p.x += p.vx; p.y += p.vy; p.life -= 0.03;
+                if(p.life <= 0) sparks.splice(i, 1);
+            });
+        }
+
+        function draw() {
+            ctx.fillStyle = 'rgba(0,0,0,0.3)'; // Motion Blur
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Bullets
+            bullets.forEach(b => {
+                ctx.fillStyle = b.color;
+                ctx.shadowBlur = 10; ctx.shadowColor = b.color;
+                ctx.fillRect(b.x, b.y, 15, 4);
+            });
+
+            // Draw Sparks
+            sparks.forEach(p => {
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x, p.y, 3, 3);
+            });
+            ctx.globalAlpha = 1;
+
+            drawStickman(p1.x, p1.y, p1.color, 'right');
+            drawStickman(p2.x, p2.y, p2.color, 'left');
+
+            update();
+            requestAnimationFrame(draw);
+        }
+        draw();
+    </script>
+</body>
+</html>
